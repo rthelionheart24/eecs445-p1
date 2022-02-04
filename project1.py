@@ -81,8 +81,7 @@ def extract_dictionary(df):
     # TODO: Implement this function
     index = 0
     for t in df["text"]:
-        unique_set = set(extract_word(t))
-        unique_list = list(unique_set)
+        unique_list = extract_word(t)
         for w in unique_list:
             if w not in word_dict:
                 word_dict[w] = index
