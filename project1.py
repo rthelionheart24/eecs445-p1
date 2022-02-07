@@ -3,6 +3,7 @@
 Project 1
 """
 
+from locale import normalize
 import pandas as pd
 import numpy as np
 import itertools
@@ -41,11 +42,11 @@ def extract_word(input_string):
         a list of words, extracted and preprocessed according to the directions
         above.
     """
-    # TODO: Implement this function
     for r in string.punctuation:
         input_string = input_string.replace(r, " ")
 
     return input_string.lower().split()
+
 
 def extract_dictionary(df):
     """Map words to index.
@@ -78,7 +79,6 @@ def extract_dictionary(df):
         a dictionary mapping words to an index
     """
     word_dict = {}
-    # TODO: Implement this function
     index = 0
     for t in df["text"]:
         unique_list = extract_word(t)
@@ -108,7 +108,11 @@ def generate_feature_matrix(df, word_dict):
     number_of_reviews = df.shape[0]
     number_of_words = len(word_dict)
     feature_matrix = np.zeros((number_of_reviews, number_of_words))
-    # TODO: Implement this function
+    unique_words = extract_dictionary(df)
+    for i in range(number_of_reviews):
+        unique_list = extract_word(df["text"][i])
+        for w in unique_list:
+            feature_matrix[i][unique_words[w]] = 1
     return feature_matrix
 
 
@@ -127,10 +131,19 @@ def performance(y_true, y_pred, metric="accuracy"):
     Returns:
         the performance as an np.float64
     """
-    # TODO: Implement this function
     # This is an optional but very useful function to implement.
     # See the sklearn.metrics documentation for pointers on how to implement
-    # the requested metrics.
+    # the requested metrics
+    if (metric == "accuracy"):
+        return metrics.accuracy_score(y_true, y_pred, normalize=True)
+    elif (metric == "f1-score"):
+        return metrics.f1_score(y_true, y_pred, average='binary')
+    elif (metric == "auroc"):
+        return metrics.roc_auc_score(y_true, y_pred)
+    elif (metric == "precision"):
+        return metrics.precision_score(y_true, y_pred, average='binary')
+    else:
+        return np.trace(metrics.confusion_matrix(y_true, y_pred, labels=[1, -1])) / len(y_pred)
 
 
 def cv_performance(clf, X, y, k=5, metric="accuracy"):
@@ -153,12 +166,20 @@ def cv_performance(clf, X, y, k=5, metric="accuracy"):
     Returns:
         average 'test' performance across the k folds as np.float64
     """
-    # TODO: Implement this function
     # HINT: You may find the StratifiedKFold from sklearn.model_selection
     # to be useful
+    skf = StratifiedKFold(n_splits=k, shuffle=False)
 
     # Put the performance of the model on each fold in the scores array
     scores = []
+    for train, test in skf.split(X, y):
+        clf.fit(X[train], y[train])
+        if (metric == "auroc"):
+            y_pred = clf.decision_function(X[test])
+        else:
+            y_pred = clf.predict(X[test])
+        p = performance(y[test], y_pred, metric)
+        scores.append(p)
     return np.array(scores).mean()
 
 
@@ -191,6 +212,16 @@ def select_param_linear(
     # TODO: Implement this function
     # HINT: You should be using your cv_performance function here
     # to evaluate the performance of each SVM
+    scores = []
+    for c in C_range:
+        clf = LinearSVC(C=c, penalty=penalty, dual=dual,
+                        loss=loss, random_state=445)
+        score = cv_performance(clf, X, y, k, metric)
+        scores.append(score)
+    print("Metric: " + metric)
+    print("Best c: " + str(C_range[scores.index(max(scores))]))
+    print("Best CV Score: " + str(max(scores)))
+    return C_range[scores.index(max(scores))]
 
 
 def plot_weight(X, y, penalty, C_range, loss, dual):
@@ -213,6 +244,12 @@ def plot_weight(X, y, penalty, C_range, loss, dual):
     # Here, for each value of c in C_range, you should
     # append to norm0 the L0-norm of the theta vector that is learned
     # when fitting an L2- or L1-penalty, degree=1 SVM to the data (X, y)
+    for c in C_range:
+        clf = LinearSVC(C=c, penalty=penalty, dual=dual,
+                        loss=loss, random_state=445)
+        clf.fit(X, y)
+        print(np.count_nonzero(clf.coef_))
+        norm0.append(np.count_nonzero(clf.coef_))
 
     plt.plot(C_range, norm0)
     plt.xscale("log")
@@ -263,23 +300,104 @@ def main():
     IMB_features, IMB_labels, IMB_test_features, IMB_test_labels = get_imbalanced_data(
         dictionary_binary, fname="data/dataset.csv"
     )
-    
-    print(extract_word("BEST book ever!"))
-    df = pd.read_csv("data/dataset.csv")
-    print(extract_dictionary(df))
-    print(len(extract_dictionary(df)))
 
     # TODO: Questions 3, 4, 5
+    # # 3A
+    # print(extract_word("BEST book ever! It\'s great"))
+    # # 3B
+    # df = pd.read_csv("data/dataset.csv")
+    # dict = extract_dictionary(df)
+    # print(len(dict))
+    # # 3C
+    # feature_matrix = generate_feature_matrix(df, dict)
+    # avg_non_zero_feature = np.sum(feature_matrix > 0, axis=1).mean()
+    # print(avg_non_zero_feature)
+    # num_apperances = np.sum(feature_matrix, axis=0)
+    # print([k for k, v in dictionary_binary.items()
+    #       if v == np.argmax(num_apperances)])
 
-    # Read multiclass data
-    # TODO: Question 6: Apply a classifier to heldout features, and then use
-    #       generate_challenge_labels to print the predicted labels
+    # # 4.1b
+    # print("Picking the best C value using accuracy as the metrics: ")
+    # print(select_param_linear(X_train, Y_train, k=5, metric="accuracy",
+    #       C_range=[1e-3, 1e-2, 1e-1, 1e0, 1e+1, 1e+2, 1e+3]))
+    # print("============================================================")
+    # print("Picking the best C value using f1-score as the metrics: ")
+    # print(select_param_linear(X_train, Y_train, k=5, metric="f1-score",
+    #       C_range=[1e-3, 1e-2, 1e-1, 1e0, 1e+1, 1e+2, 1e+3]))
+    # print("============================================================")
+    # print("Picking the best C value using auroc as the metrics: ")
+    # print(select_param_linear(X_train, Y_train, k=5, metric="auroc",
+    #       C_range=[1e-3, 1e-2, 1e-1, 1e0, 1e+1, 1e+2, 1e+3]))
+    # print("============================================================")
+    # print("Picking the best C value using precision as the metrics: ")
+    # print(select_param_linear(X_train, Y_train, k=5, metric="precision",
+    #                           C_range=[1e-3, 1e-2, 1e-1, 1e0, 1e+1, 1e+2, 1e+3]))
+    # print("============================================================")
+    # print("Picking the best C value using sensitivity as the metrics: ")
+    # print(select_param_linear(X_train, Y_train, k=5, metric="sensitivity",
+    #       C_range=[1e-3, 1e-2, 1e-1, 1e0, 1e+1, 1e+2, 1e+3]))
+    # print("============================================================")
+    # print("Picking the best C value using specificity as the metrics: ")
+    # print(select_param_linear(X_train, Y_train, k=5, metric="specificity",
+    #                           C_range=[1e-3, 1e-2, 1e-1, 1e0, 1e+1, 1e+2, 1e+3]))
+    # print("============================================================")
 
-    (multiclass_features,
-     multiclass_labels,
-     multiclass_dictionary) = get_multiclass_training_data()
+    # # 4.1c
+    # cv_performance(LinearSVC(C=1.0, penalty="l2", dual=True, loss="hinge",
+    #                random_state=445), X_test, Y_test, k=5, metric="accuracy")
+    # cv_performance(LinearSVC(C=1.0, penalty="l2", dual=True, loss="hinge",
+    #                random_state=445), X_test, Y_test, k=5, metric="f1-score")
+    # cv_performance(LinearSVC(C=1.0, penalty="l2", dual=True, loss="hinge",
+    #                random_state=445), X_test, Y_test, k=5, metric="auroc")
+    # cv_performance(LinearSVC(C=1.0, penalty="l2", dual=True, loss="hinge",
+    #                random_state=445), X_test, Y_test, k=5, metric="precision")
+    # cv_performance(LinearSVC(C=1.0, penalty="l2", dual=True, loss="hinge",
+    #                random_state=445), X_test, Y_test, k=5, metric="sensitivity")
+    # cv_performance(LinearSVC(C=1.0, penalty="l2", dual=True, loss="hinge",
+    #                random_state=445), X_test, Y_test, k=5, metric="specificity")
 
-    heldout_features = get_heldout_reviews(multiclass_dictionary)
+    # # 4.1d
+    # plot_weight(X_train, Y_train, penalty="l2", C_range=[
+    #             1e-3, 1e-2, 1e-1, 1e0, 1e+1, 1e+2, 1e+3], dual=True, loss='hinge')
+
+    # # 4.1e
+    # clf = LinearSVC(C=0.1, penalty="l2", dual=True, loss="hinge",
+    #                 random_state=445)
+    # clf.fit(X_train, Y_train)
+    # coef_vs_words = np.concatenate(
+    #     [np.sort(clf.coef_)[0][:5], np.sort(clf.coef_)[0][len(clf.coef_[0])-5:]])
+    # idx_coef_vs_words = np.concatenate(
+    #     [np.argsort(clf.coef_)[0][:5], np.argsort(clf.coef_)[0][len(clf.coef_[0])-5:]])
+    # words = [k for k, v in dictionary_binary.items() if v in idx_coef_vs_words]
+
+    # plt.bar(words, coef_vs_words)
+    # plt.xlabel("Words")
+    # plt.ylabel("Coefficient")
+    # plt.xticks(fontsize=5)
+    # plt.title("Coefficient_vs_word.png")
+    # plt.savefig("Coefficient_vs_word.png")
+    # plt.close()
+
+    # # 4.2a
+    # best_c = select_param_linear(X_train, Y_train, k=5, metric="auroc", C_range=[
+    #                              1e-3, 1e-2, 1e-1, 1e0], loss="squared_hinge", penalty="l1", dual=False)
+    # print(cv_performance(LinearSVC(C=best_c, penalty="l1", dual=False,
+    #       loss="squared_hinge", random_state=445), X_test, Y_test, k=5, metric="auroc"))
+
+    # 4.2b
+    plot_weight(X_train, Y_train, penalty="l1", C_range=[
+                1e-3, 1e-2, 1e-1, 1e0, 1e+1, 1e+2, 1e+3], dual=False, loss='squared_hinge')
+
+    print()
+    # # Read multiclass data
+    # # TODO: Question 6: Apply a classifier to heldout features, and then use
+    # #       generate_challenge_labels to print the predicted labels
+
+    # (multiclass_features,
+    #  multiclass_labels,
+    #  multiclass_dictionary) = get_multiclass_training_data()
+
+    # heldout_features = get_heldout_reviews(multiclass_dictionary)
 
 
 if __name__ == "__main__":
