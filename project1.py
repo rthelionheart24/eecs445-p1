@@ -291,6 +291,7 @@ def select_param_quadratic(X, y, k=5, metric="accuracy", param_range=[]):
         clf = SVC(kernel="poly", degree=2, C=p[0], coef0=p[1], gamma="auto")
         score = cv_performance(clf, X, y, k, metric)
         scores.append(score)
+        print("CV Score: " + str(p[0]) + ", " + str(p[1]) + " " + str(score))
     best_score = param_range[scores.index(max(scores))]
     best_C_val, best_r_val = best_score[0], best_score[1]
     print("Metric: " + metric)
@@ -403,7 +404,6 @@ def main():
     combination_C_r = np.array(np.meshgrid(C_range, C_range)).T.reshape(-1, 2)
     best_c, best_r = select_param_quadratic(
         X_train, Y_train, k=5, metric="auroc", param_range=combination_C_r)
-    print(best_c, best_r)
 
     print("Random Search")
     combination_C_r = []
@@ -413,7 +413,6 @@ def main():
         combination_C_r.append(element)
     best_c, best_r = select_param_quadratic(
         X_train, Y_train, k=5, metric="auroc", param_range=combination_C_r)
-    print(best_c, best_r)
 
     print()
     # # Read multiclass data
