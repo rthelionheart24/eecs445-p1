@@ -286,7 +286,16 @@ def select_param_quadratic(X, y, k=5, metric="accuracy", param_range=[]):
     # TODO: Implement this function
     # Hint: This will be very similar to select_param_linear, except
     # the type of SVM model you are using will be different...
-    best_C_val, best_r_val = 0.0, 0.0
+    scores = []
+    for p in param_range:
+        clf = SVC(kernel="poly", degree=2, C=p[0], coef0=p[1], gamma="auto")
+        score = cv_performance(clf, X, y, k, metric)
+        scores.append(score)
+    best_score = param_range[scores.index(max(scores))]
+    best_C_val, best_r_val = best_score[0], best_score[1]
+    print("Metric: " + metric)
+    print("Best c, r: " + str(best_C_val) + ", " + str(best_r_val))
+    print("Best CV Score: " + str(max(scores)))
     return best_C_val, best_r_val
 
 
@@ -384,9 +393,27 @@ def main():
     # print(cv_performance(LinearSVC(C=best_c, penalty="l1", dual=False,
     #       loss="squared_hinge", random_state=445), X_test, Y_test, k=5, metric="auroc"))
 
-    # 4.2b
-    plot_weight(X_train, Y_train, penalty="l1", C_range=[
-                1e-3, 1e-2, 1e-1, 1e0, 1e+1, 1e+2, 1e+3], dual=False, loss='squared_hinge')
+    # # 4.2b
+    # plot_weight(X_train, Y_train, penalty="l1", C_range=[
+    #             1e-3, 1e-2, 1e-1, 1e0, 1e+1, 1e+2, 1e+3], dual=False, loss='squared_hinge')
+
+    # 4.3a
+    print("Grid Search")
+    C_range = [1e-2, 1e-1, 1e0, 1e+1, 1e+2, 1e+3]
+    combination_C_r = np.array(np.meshgrid(C_range, C_range)).T.reshape(-1, 2)
+    best_c, best_r = select_param_quadratic(
+        X_train, Y_train, k=5, metric="auroc", param_range=combination_C_r)
+    print(best_c, best_r)
+
+    print("Random Search")
+    combination_C_r = []
+    for i in range(25):
+        element = [10**(np.random.uniform(-2, 3)), 10 **
+                   (np.random.uniform(-2, 3))]
+        combination_C_r.append(element)
+    best_c, best_r = select_param_quadratic(
+        X_train, Y_train, k=5, metric="auroc", param_range=combination_C_r)
+    print(best_c, best_r)
 
     print()
     # # Read multiclass data
