@@ -137,13 +137,19 @@ def performance(y_true, y_pred, metric="accuracy"):
     if (metric == "accuracy"):
         return metrics.accuracy_score(y_true, y_pred, normalize=True)
     elif (metric == "f1-score"):
-        return metrics.f1_score(y_true, y_pred, average='binary')
+        return metrics.f1_score(y_true, y_pred)
     elif (metric == "auroc"):
         return metrics.roc_auc_score(y_true, y_pred)
     elif (metric == "precision"):
-        return metrics.precision_score(y_true, y_pred, average='binary')
-    else:
-        return np.trace(metrics.confusion_matrix(y_true, y_pred, labels=[1, -1])) / len(y_pred)
+        return metrics.precision_score(y_true, y_pred)
+    elif (metric == "sensitivity"):
+        matrix = metrics.confusion_matrix(
+            y_true, y_pred, labels=[1, -1])
+        return matrix[0][0]/(matrix[0][0]+matrix[0][1])
+    elif (metric == "specificity"):
+        matrix = metrics.confusion_matrix(
+            y_true, y_pred, labels=[1, -1])
+        return matrix[1][1]/(matrix[1][1]+matrix[1][0])
 
 
 def cv_performance(clf, X, y, k=5, metric="accuracy"):
@@ -180,6 +186,7 @@ def cv_performance(clf, X, y, k=5, metric="accuracy"):
             y_pred = clf.predict(X[test])
         p = performance(y[test], y_pred, metric)
         scores.append(p)
+    # print("AVG: ", np.mean(scores))
     return np.array(scores).mean()
 
 
@@ -283,12 +290,12 @@ def select_param_quadratic(X, y, k=5, metric="accuracy", param_range=[]):
         The parameter values for a quadratic-kernel SVM that maximize
         the average 5-fold CV performance as a pair (C,r)
     """
-    # TODO: Implement this function
     # Hint: This will be very similar to select_param_linear, except
     # the type of SVM model you are using will be different...
     scores = []
     for p in param_range:
-        clf = SVC(kernel="poly", degree=2, C=p[0], coef0=p[1], gamma="auto")
+        clf = SVC(kernel="poly", degree=2,
+                  C=p[0], coef0=p[1], gamma="auto", random_state=445)
         score = cv_performance(clf, X, y, k, metric)
         scores.append(score)
         print("CV Score: " + str(p[0]) + ", " + str(p[1]) + " " + str(score))
@@ -305,24 +312,21 @@ def main():
     # NOTE: READING IN THE DATA WILL NOT WORK UNTIL YOU HAVE FINISHED
     #       IMPLEMENTING generate_feature_matrix AND extract_dictionary
     X_train, Y_train, X_test, Y_test, dictionary_binary = get_split_binary_data(
-        fname="data/dataset.csv"
+        fname="data/debug.csv"
     )
     IMB_features, IMB_labels, IMB_test_features, IMB_test_labels = get_imbalanced_data(
-        dictionary_binary, fname="data/dataset.csv"
+        dictionary_binary, fname="data/debug.csv"
     )
 
     # TODO: Questions 3, 4, 5
     # # 3A
     # print(extract_word("BEST book ever! It\'s great"))
     # # 3B
-    # df = pd.read_csv("data/dataset.csv")
-    # dict = extract_dictionary(df)
-    # print(len(dict))
+    # print(len(dictionary_binary))
     # # 3C
-    # feature_matrix = generate_feature_matrix(df, dict)
-    # avg_non_zero_feature = np.sum(feature_matrix > 0, axis=1).mean()
+    # avg_non_zero_feature = np.sum(X_train > 0, axis=1).mean()
     # print(avg_non_zero_feature)
-    # num_apperances = np.sum(feature_matrix, axis=0)
+    # num_apperances = np.sum(X_train, axis=0)
     # print([k for k, v in dictionary_binary.items()
     #       if v == np.argmax(num_apperances)])
 
@@ -353,18 +357,28 @@ def main():
     # print("============================================================")
 
     # # 4.1c
-    # cv_performance(LinearSVC(C=1.0, penalty="l2", dual=True, loss="hinge",
-    #                random_state=445), X_test, Y_test, k=5, metric="accuracy")
-    # cv_performance(LinearSVC(C=1.0, penalty="l2", dual=True, loss="hinge",
-    #                random_state=445), X_test, Y_test, k=5, metric="f1-score")
-    # cv_performance(LinearSVC(C=1.0, penalty="l2", dual=True, loss="hinge",
-    #                random_state=445), X_test, Y_test, k=5, metric="auroc")
-    # cv_performance(LinearSVC(C=1.0, penalty="l2", dual=True, loss="hinge",
-    #                random_state=445), X_test, Y_test, k=5, metric="precision")
-    # cv_performance(LinearSVC(C=1.0, penalty="l2", dual=True, loss="hinge",
-    #                random_state=445), X_test, Y_test, k=5, metric="sensitivity")
-    # cv_performance(LinearSVC(C=1.0, penalty="l2", dual=True, loss="hinge",
-    #                random_state=445), X_test, Y_test, k=5, metric="specificity")
+    # y_pred = LinearSVC(C=1, loss="hinge", penalty="l2", random_state=445).fit(
+    #     X_train, Y_train).predict(X_test)
+    # print(metrics.accuracy_score(Y_test, y_pred, normalize=True))
+
+    # y_pred = LinearSVC(C=1, loss="hinge", penalty="l2", random_state=445).fit(
+    #     X_train, Y_train).predict(X_test)
+    # print(metrics.f1_score(Y_test, y_pred, average='binary'))
+
+    # y_pred = LinearSVC(C=0.1, loss="hinge", penalty="l2", random_state=445).fit(
+    #     X_train, Y_train).predict(X_test)
+    # print(metrics.roc_auc_score(Y_test, y_pred))
+
+    # y_pred = LinearSVC(C=0.01, loss="hinge", penalty="l2", random_state=445).fit(
+    #     X_train, Y_train).predict(X_test)
+    # print(metrics.precision_score(Y_test, y_pred, average='binary'))
+
+    # y_pred = LinearSVC(C=1, loss="hinge" , penalty="l2", random_state=445).fit(
+    #     X_train, Y_train).predict(X_test)
+    # print(np.trace(metrics.confusion_matrix(
+    #     Y_test, y_pred, labels=[1, -1])) / len(y_pred))
+    # print(np.trace(metrics.confusion_matrix(
+    #     Y_test, y_pred, labels=[1, -1])) / len(y_pred))
 
     # # 4.1d
     # plot_weight(X_train, Y_train, penalty="l2", C_range=[
@@ -378,7 +392,10 @@ def main():
     #     [np.sort(clf.coef_)[0][:5], np.sort(clf.coef_)[0][len(clf.coef_[0])-5:]])
     # idx_coef_vs_words = np.concatenate(
     #     [np.argsort(clf.coef_)[0][:5], np.argsort(clf.coef_)[0][len(clf.coef_[0])-5:]])
-    # words = [k for k, v in dictionary_binary.items() if v in idx_coef_vs_words]
+    # words = []
+    # for i in idx_coef_vs_words:
+    #     words.append(list(dictionary_binary.keys())[
+    #                  list(dictionary_binary.values()).index(i)])
 
     # plt.bar(words, coef_vs_words)
     # plt.xlabel("Words")
@@ -405,6 +422,12 @@ def main():
     best_c, best_r = select_param_quadratic(
         X_train, Y_train, k=5, metric="auroc", param_range=combination_C_r)
 
+    clf = SVC(C=best_c, coef0=best_r, kernel='poly',
+              degree=2, gamma='auto', random_state=445)
+    clf.fit(X_train, Y_train)
+    y_pred = clf.decision_function(X_test)
+    print("Test performance: ", performance(Y_test, y_pred, metric="auroc"))
+
     print("Random Search")
     combination_C_r = []
     for i in range(25):
@@ -414,16 +437,51 @@ def main():
     best_c, best_r = select_param_quadratic(
         X_train, Y_train, k=5, metric="auroc", param_range=combination_C_r)
 
+    clf = SVC(C=best_c, coef0=best_r, kernel="poly",
+              degree=2, gamma="auto", random_state=445)
+    clf.fit(X_train, Y_train)
+    y_pred = clf.decision_function(X_test)
+    print("Test performance: ", performance(Y_test, y_pred, metric="auroc"))
+
+    # # 5.1c
+    # clf = LinearSVC(C=0.01, loss="hinge", penalty="l2",
+    #                 class_weight={-1: 1, 1: 10}, random_state=445)
+    # clf.fit(X_train, Y_train)
+    # y_pred = clf.predict(X_test)
+
+    # print(metrics.accuracy_score(Y_test, y_pred, normalize=True))
+    # print(metrics.f1_score(Y_test, y_pred, average='binary'))
+    # print(metrics.roc_auc_score(Y_test, y_pred))
+    # print(metrics.precision_score(Y_test, y_pred, average='binary'))
+    # print(np.trace(metrics.confusion_matrix(
+    #     Y_test, y_pred, labels=[1, -1])) / len(y_pred))
+    # print(np.trace(metrics.confusion_matrix(
+    #     Y_test, y_pred, labels=[1, -1])) / len(y_pred))
+
+    # # 5.2
+    # clf = LinearSVC(C=0.01, loss="hinge", penalty="l2", class_weight={-1: 1, 1: 10}, random_state=445)
+    # clf.fit(IMB_features, IMB_labels)
+    # IMB_pred = clf.predict(IMB_test_features)
+
+    # print(metrics.accuracy_score(IMB_test_labels, IMB_pred, normalize=True))
+    # print(metrics.f1_score(IMB_test_labels, IMB_pred, average='binary'))
+    # print(metrics.roc_auc_score(IMB_test_labels, IMB_pred))
+    # print(metrics.precision_score(IMB_test_labels, IMB_pred, average='binary'))
+    # print(np.trace(metrics.confusion_matrix(
+    #     IMB_test_labels, IMB_pred, labels=[1, -1])) / len(IMB_pred))
+    # print(np.trace(metrics.confusion_matrix(
+    #     IMB_test_labels, IMB_pred, labels=[1, -1])) / len(IMB_pred))
+
     print()
-    # # Read multiclass data
-    # # TODO: Question 6: Apply a classifier to heldout features, and then use
-    # #       generate_challenge_labels to print the predicted labels
+    # Read multiclass data
+    # TODO: Question 6: Apply a classifier to heldout features, and then use
+    #       generate_challenge_labels to print the predicted labels
 
-    # (multiclass_features,
-    #  multiclass_labels,
-    #  multiclass_dictionary) = get_multiclass_training_data()
+    (multiclass_features,
+     multiclass_labels,
+     multiclass_dictionary) = get_multiclass_training_data()
 
-    # heldout_features = get_heldout_reviews(multiclass_dictionary)
+    heldout_features = get_heldout_reviews(multiclass_dictionary)
 
 
 if __name__ == "__main__":
