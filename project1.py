@@ -423,11 +423,10 @@ def main():
         for r in C_range:
             combination_C_r.append([c, r])
 
-    best_c, best_r = select_param_quadratic(
-        X_train, Y_train, k=5, metric="auroc", param_range=combination_C_r)
+    # best_c, best_r = select_param_quadratic(
+    #     X_train, Y_train, k=5, metric="auroc", param_range=combination_C_r)
 
-    print(best_c, ", ", best_r)
-    y_pred = SVC(C=best_c, coef0=best_r, kernel='poly',
+    y_pred = SVC(C=0.01, coef0=1000, kernel='poly',
                  degree=2, gamma='auto').fit(X_train, Y_train).decision_function(X_test)
     print("Test performance: ", performance(Y_test, y_pred, metric="auroc"))
 
