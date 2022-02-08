@@ -319,6 +319,7 @@ def main():
     )
 
     # TODO: Questions 3, 4, 5
+    # * Pass debug
     # # 3A
     # print(extract_word("BEST book ever! It\'s great"))
     # # 3B
@@ -330,6 +331,7 @@ def main():
     # print([k for k, v in dictionary_binary.items()
     #       if v == np.argmax(num_apperances)])
 
+    # #* Pass debug
     # # 4.1b
     # print("Picking the best C value using accuracy as the metrics: ")
     # print(select_param_linear(X_train, Y_train, k=5, metric="accuracy",
@@ -356,34 +358,41 @@ def main():
     #                           C_range=[1e-3, 1e-2, 1e-1, 1e0, 1e+1, 1e+2, 1e+3]))
     # print("============================================================")
 
+    #! Need to be fixed
     # # 4.1c
     # y_pred = LinearSVC(C=1, loss="hinge", penalty="l2", random_state=445).fit(
     #     X_train, Y_train).predict(X_test)
-    # print(metrics.accuracy_score(Y_test, y_pred, normalize=True))
+    # perf = performance(Y_test, y_pred, metric="accuracy")
+    # print(perf)
 
     # y_pred = LinearSVC(C=1, loss="hinge", penalty="l2", random_state=445).fit(
     #     X_train, Y_train).predict(X_test)
-    # print(metrics.f1_score(Y_test, y_pred, average='binary'))
+    # perf = performance(Y_test, y_pred, metric="f1-score")
+    # print(perf)
 
     # y_pred = LinearSVC(C=0.1, loss="hinge", penalty="l2", random_state=445).fit(
-    #     X_train, Y_train).predict(X_test)
-    # print(metrics.roc_auc_score(Y_test, y_pred))
+    #     X_train, Y_train).decision_function(X_test)
+    # perf = performance(Y_test, y_pred, metric="auroc")
+    # print(perf)
 
     # y_pred = LinearSVC(C=0.01, loss="hinge", penalty="l2", random_state=445).fit(
     #     X_train, Y_train).predict(X_test)
-    # print(metrics.precision_score(Y_test, y_pred, average='binary'))
+    # perf = performance(Y_test, y_pred, metric="precision")
+    # print(perf)
 
-    # y_pred = LinearSVC(C=1, loss="hinge" , penalty="l2", random_state=445).fit(
+    # y_pred = LinearSVC(C=1, loss="hinge", penalty="l2", random_state=445).fit(
     #     X_train, Y_train).predict(X_test)
-    # print(np.trace(metrics.confusion_matrix(
-    #     Y_test, y_pred, labels=[1, -1])) / len(y_pred))
-    # print(np.trace(metrics.confusion_matrix(
-    #     Y_test, y_pred, labels=[1, -1])) / len(y_pred))
+    # perf = performance(Y_test, y_pred, metric="sensitivity")
+    # print(perf)
+    # perf = performance(Y_test, y_pred, metric="specificity")
+    # print(perf)
 
+    # * Pass debug
     # # 4.1d
     # plot_weight(X_train, Y_train, penalty="l2", C_range=[
     #             1e-3, 1e-2, 1e-1, 1e0, 1e+1, 1e+2, 1e+3], dual=True, loss='hinge')
 
+    # * Pass debug
     # # 4.1e
     # clf = LinearSVC(C=0.1, penalty="l2", dual=True, loss="hinge",
     #                 random_state=445)
@@ -405,45 +414,49 @@ def main():
     # plt.savefig("Coefficient_vs_word.png")
     # plt.close()
 
+    #! Needs to be fixed
     # # 4.2a
     # best_c = select_param_linear(X_train, Y_train, k=5, metric="auroc", C_range=[
     #                              1e-3, 1e-2, 1e-1, 1e0], loss="squared_hinge", penalty="l1", dual=False)
-    # print(cv_performance(LinearSVC(C=best_c, penalty="l1", dual=False,
-    #       loss="squared_hinge", random_state=445), X_test, Y_test, k=5, metric="auroc"))
+    # cv_score = cv_performance(LinearSVC(C=best_c, penalty="l1", dual=False,
+    #                                     loss="squared_hinge", random_state=445), X_test, Y_test, k=5, metric="auroc")
+
+    # score =
 
     # # 4.2b
     # plot_weight(X_train, Y_train, penalty="l1", C_range=[
     #             1e-3, 1e-2, 1e-1, 1e0, 1e+1, 1e+2, 1e+3], dual=False, loss='squared_hinge')
 
-    # 4.3a
-    print("Grid Search")
-    C_range = [1e-2, 1e-1, 1e0, 1e+1, 1e+2, 1e+3]
-    combination_C_r = []
-    for c in C_range:
-        for r in C_range:
-            combination_C_r.append([c, r])
+    # # 4.3a
+    # print("Grid Search")
+    # C_range = [1e-2, 1e-1, 1e0, 1e+1, 1e+2, 1e+3]
+    # combination_C_r = []
+    # for c in C_range:
+    #     for r in C_range:
+    #         combination_C_r.append([c, r])
 
     # best_c, best_r = select_param_quadratic(
     #     X_train, Y_train, k=5, metric="auroc", param_range=combination_C_r)
 
-    y_pred = SVC(C=0.01, coef0=1000, kernel='poly',
-                 degree=2, gamma='auto').fit(X_train, Y_train).decision_function(X_test)
-    print("Test performance: ", performance(Y_test, y_pred, metric="auroc"))
+    # # print("Test performance: ", performance(Y_test, SVC(C=best_c, coef0=best_r, kernel='poly',
+    # #                                                     degree=2, gamma='auto').fit(X_train, Y_train).decision_function(X_test), metric="auroc"))
+    # print(metrics.roc_auc_score(Y_test, SVC(C=best_c, coef0=best_r, kernel='poly',
+    #                                         degree=2, gamma='auto').fit(X_train, Y_train).decision_function(X_test)))
 
-    print("Random Search")
-    combination_C_r = []
-    for i in range(25):
-        element = [10**(np.random.uniform(-2, 3)), 10 **
-                   (np.random.uniform(-2, 3))]
-        combination_C_r.append(element)
-    best_c, best_r = select_param_quadratic(
-        X_train, Y_train, k=5, metric="auroc", param_range=combination_C_r)
+    # print("Random Search")
+    # combination_C_r = []
+    # for i in range(25):
+    #     element = [10**(np.random.uniform(-2, 3)), 10 **
+    #                (np.random.uniform(-2, 3))]
+    #     combination_C_r.append(element)
+    # best_c, best_r = select_param_quadratic(
+    #     X_train, Y_train, k=5, metric="auroc", param_range=combination_C_r)
 
-    clf = SVC(C=best_c, coef0=best_r, kernel="poly",
-              degree=2, gamma="auto", random_state=445)
-    clf.fit(X_train, Y_train)
-    y_pred = clf.decision_function(X_test)
-    print("Test performance: ", performance(Y_test, y_pred, metric="auroc"))
+    # clf = SVC(C=best_c, coef0=best_r, kernel="poly",
+    #           degree=2, gamma="auto", random_state=445)
+    # clf.fit(X_train, Y_train)
+    # y_pred = clf.decision_function(X_test)
+    # print("Test performance: ", performance(y_pred, Y_test, metric="auroc"))
 
     # # 5.1c
     # clf = LinearSVC(C=0.01, loss="hinge", penalty="l2",
@@ -483,7 +496,10 @@ def main():
      multiclass_labels,
      multiclass_dictionary) = get_multiclass_training_data()
 
+    print(multiclass_dictionary)
+
     heldout_features = get_heldout_reviews(multiclass_dictionary)
+
 
 
 if __name__ == "__main__":
