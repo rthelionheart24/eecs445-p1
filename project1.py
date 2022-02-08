@@ -418,14 +418,17 @@ def main():
     # 4.3a
     print("Grid Search")
     C_range = [1e-2, 1e-1, 1e0, 1e+1, 1e+2, 1e+3]
-    combination_C_r = np.array(np.meshgrid(C_range, C_range)).T.reshape(-1, 2)
+    combination_C_r = []
+    for c in C_range:
+        for r in C_range:
+            combination_C_r.append([c, r])
+
     best_c, best_r = select_param_quadratic(
         X_train, Y_train, k=5, metric="auroc", param_range=combination_C_r)
 
-    clf = SVC(C=best_c, coef0=best_r, kernel='poly',
-              degree=2, gamma='auto', random_state=445)
-    clf.fit(X_train, Y_train)
-    y_pred = clf.decision_function(X_test)
+    print(best_c, ", ", best_r)
+    y_pred = SVC(C=best_c, coef0=best_r, kernel='poly',
+                 degree=2, gamma='auto').fit(X_train, Y_train).decision_function(X_test)
     print("Test performance: ", performance(Y_test, y_pred, metric="auroc"))
 
     print("Random Search")
