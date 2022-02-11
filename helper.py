@@ -6,6 +6,23 @@ import numpy as np
 
 import project1
 
+from sklearn import model_selection
+
+from sklearn.svm import SVC, LinearSVC
+from sklearn.model_selection import StratifiedKFold
+from sklearn import metrics
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.preprocessing import LabelEncoder
+from collections import defaultdict
+from matplotlib import pyplot as plt
+
+import nltk
+from nltk.tokenize import word_tokenize
+from nltk import pos_tag
+from nltk.corpus import stopwords
+from nltk.corpus import wordnet as wn
+from nltk.stem import WordNetLemmatizer
+
 
 def load_data(fname):
     """
@@ -31,8 +48,10 @@ def get_split_binary_data(fname="data/dataset.csv", n=None):
     dataframe = dataframe[dataframe["label"] != 0]
     positiveDF = dataframe[dataframe["label"] == 1].copy()
     negativeDF = dataframe[dataframe["label"] == -1].copy()
-    if n!=None: class_size=n
-    else: class_size = 2 * positiveDF.shape[0] // 3
+    if n != None:
+        class_size = n
+    else:
+        class_size = 2 * positiveDF.shape[0] // 3
     X_train = (
         pd.concat([positiveDF[:class_size], negativeDF[:class_size]])
         .reset_index(drop=True)
@@ -74,12 +93,14 @@ def get_imbalanced_data(dictionary, fname="data/dataset.csv", ratio=0.25):
     positiveDF = positiveDF.sample(frac=1, random_state=445)
     negativeDF = negativeDF.sample(frac=1, random_state=445)
     X_train = (
-        pd.concat([positiveDF[:positive_class_size], negativeDF[:negative_class_size]])
+        pd.concat([positiveDF[:positive_class_size],
+                  negativeDF[:negative_class_size]])
         .reset_index(drop=True)
         .copy()
     )
     X_test = (
-        pd.concat([positiveDF[positive_class_size:], negativeDF[negative_class_size:]])
+        pd.concat([positiveDF[positive_class_size:],
+                  negativeDF[negative_class_size:]])
         .reset_index(drop=True)
         .copy()
     )
@@ -142,5 +163,6 @@ def generate_challenge_labels(y, uniqname):
     you do not change the order of the ratings in the heldout dataset since we will use
     this file to evaluate your classifier.
     """
-    pd.Series(np.array(y)).to_csv(uniqname + ".csv", header=["label"], index=False)
+    pd.Series(np.array(y)).to_csv(
+        uniqname + ".csv", header=["label"], index=False)
     return

@@ -15,6 +15,7 @@ from sklearn.model_selection import StratifiedKFold
 from sklearn import metrics
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.preprocessing import LabelEncoder
+from sklearn import multiclass
 from collections import defaultdict
 from matplotlib import pyplot as plt
 
@@ -485,15 +486,20 @@ def main():
     # clf = LinearSVC(C=0.01, loss="hinge", penalty="l2",
     #                 class_weight={-1: 1, 1: 10}, random_state=445).fit(IMB_features, IMB_labels)
 
-    # print(performance(IMB_test_labels, clf.predict(IMB_test_features), metric="accuracy"))
-    # print(performance(IMB_test_labels, clf.predict(IMB_test_features), metric="f1-score"))
-    # print(performance(IMB_test_labels, clf.decision_function(IMB_test_features), metric="auroc"))
-    # print(performance(IMB_test_labels, clf.predict(IMB_test_features), metric="precision"))
+    # print(performance(IMB_test_labels, clf.predict(
+    #     IMB_test_features), metric="accuracy"))
+    # print(performance(IMB_test_labels, clf.predict(
+    #     IMB_test_features), metric="f1-score"))
+    # print(performance(IMB_test_labels, clf.decision_function(
+    #     IMB_test_features), metric="auroc"))
+    # print(performance(IMB_test_labels, clf.predict(
+    #     IMB_test_features), metric="precision"))
     # print(performance(IMB_test_labels, clf.predict(
     #     IMB_test_features), metric="sensitivity"))
-    # print(performance(IMB_test_labels, clf.predict(IMB_test_features), metric="specificity"))
+    # print(performance(IMB_test_labels, clf.predict(
+    #     IMB_test_features), metric="specificity"))
 
-    # 5.3a
+    # # 5.3a
     # neg = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     # pos = neg
     # comb = []
@@ -512,7 +518,7 @@ def main():
     # print(max(perf))
 
     # clf = LinearSVC(C=0.01, penalty="l2", loss="hinge", class_weight={-1: 10, 1: 3},
-    #                 random_state=445).f   it(IMB_features, IMB_labels).fit(IMB_features, IMB_labels)
+    #                 random_state=445).fit(IMB_features, IMB_labels)
 
     # print(performance(IMB_test_labels, clf.predict(
     #     IMB_test_features), metric="accuracy"))
@@ -528,17 +534,17 @@ def main():
     #     IMB_test_features), metric="specificity"))
 
     # # 5.4
-    # metrics=["Accuracy", "F1-score", "AUROC", "Precision", "Sensitivity", "Specificity"]
-    # n1p1 = [0.7995079950799509, 0.8885850991114149,
-    #         0.9484568192543652, 0.7995079950799509, 1.0, 0.0]
-    # n10p3 = [0.8597785977859779, 0.9043624161073825, 0.9657291175082586,
-    #          0.9944649446494465, 0.8292307692307692, 0.9815950920245399]
 
-    # plt.plot(metrics, n1p1, label="W_n=1, W_p=1")
-    # plt.plot(metrics, n10p3, label="W_n=10, W_p=3")
-    # plt.xlabel("Metrics")
-    # plt.ylabel("Performance")
-    # plt.legend()
+    # clf_weighted = LinearSVC(C=0.01, penalty="l2", loss="hinge",
+    #                          class_weight={-1: 10, 1: 3}, random_state=445).fit(IMB_features, IMB_labels)
+    # clf_unweighted = LinearSVC(
+    #     C=0.01, penalty="l2", loss="hinge", random_state=445).fit(IMB_features, IMB_labels)
+    # roc_axis = metrics.plot_roc_curve(
+    #     clf_weighted, IMB_test_features, IMB_test_labels)
+    # metrics.plot_roc_curve(
+    #     clf_unweighted, IMB_test_features, IMB_test_labels, ax=roc_axis.ax_)
+    # plt.plot([0, 1], [0, 1], "--")
+
     # plt.savefig("ROC.png")
 
     # Read multiclass data
@@ -546,18 +552,32 @@ def main():
     #       generate_challenge_labels to print the predicted labels
 
     (multiclass_features,
-     multiclass_labels,
-     multiclass_dictionary) = get_multiclass_training_data()
+     multiclass_labels, multiclass_dictionary) = get_multiclass_training_data()
 
     heldout_features = get_heldout_reviews(multiclass_dictionary)
 
-    print(multiclass_features)
+    corpus = load_data("data/dataset.csv")
 
-    corpus = pd.read_csv("data/dataset.csv")
+    corpus["text"] = [t.replace(":)", " 0e1 ") for t in corpus["text"]]
+    corpus["text"] = [t.replace(";)", " 0e2 ") for t in corpus["text"]]
+    corpus["text"] = [t.replace(":D", " 0e3 ") for t in corpus["text"]]
+    corpus["text"] = [t.replace("(:", " 0e4 ") for t in corpus["text"]]
+    corpus["text"] = [t.replace("(;", " 0e5 ") for t in corpus["text"]]
+
+    corpus["text"] = [t.replace(":(", " 0e6 ") for t in corpus["text"]]
+    corpus["text"] = [t.replace(";(", " 0e7 ") for t in corpus["text"]]
+    corpus["text"] = [t.replace(":/", " 0e8 ") for t in corpus["text"]]
+    corpus["text"] = [t.replace("D:", " 0e9 ") for t in corpus["text"]]
+    corpus["text"] = [t.replace("):", " 0e10 ") for t in corpus["text"]]
 
     corpus["text"] = [t.lower() for t in corpus["text"]]
 
     corpus["text"] = [word_tokenize(t) for t in corpus["text"]]
+
+    for i in corpus["text"]:
+        if "0ef" in i:
+            print(i)
+
     tag_map = defaultdict(lambda: wn.NOUN)
     tag_map['J'] = wn.ADJ
     tag_map['V'] = wn.VERB
@@ -573,25 +593,100 @@ def main():
                 Final_words.append(word_final)
         corpus.loc[index, "text_final"] = str(Final_words)
 
-    X, x, Y, y = model_selection.train_test_split(
+    X_train, X_test, Y_train, Y_test = model_selection.train_test_split(
         corpus["text_final"], corpus["label"])
 
     Encoder = LabelEncoder()
 
-    Y = Encoder.fit_transform(Y)
-    y = Encoder.fit_transform(y)
+    Y_train = Encoder.fit_transform(Y_train)
+    Y_test = Encoder.fit_transform(Y_test)
 
     vectorizer = TfidfVectorizer().fit(corpus["text_final"])
 
-    train = vectorizer.transform(X)
-    test = vectorizer.transform(x)
+    X_train = vectorizer.transform(X_train)
+    X_test = vectorizer.transform(X_test)
 
-    clf = LinearSVC(C=1, penalty="l2", loss="hinge", dual=True)
-    clf.fit(train, Y)
+    range = [0.01, 0.1, 1, 10, 100, 1000]
 
-    prediction = clf.predict(test)
+    best_c = select_param_linear(X_train, Y_train, C_range=range)
+    print("Best C for linear: ", best_c)
 
-    print(performance(y, prediction, metric="accuracy"))
+    clf_ovr = multiclass.OneVsRestClassifier(LinearSVC(C=best_c, penalty="l2", loss="hinge", dual=True, random_state=445)).fit(
+        X_train, Y_train)
+    clf_ovo = multiclass.OneVsOneClassifier(LinearSVC(C=best_c, penalty="l2", loss="hinge", dual=True, random_state=445)).fit(
+        X_train, Y_train)
+
+    print("l2, hinge:")
+    print("One vs Rest Accuracy: ",
+          metrics.accuracy_score(Y_test, clf_ovr.predict(X_test)))
+    print("One vs One Accuracy: ",
+          metrics.accuracy_score(Y_test, clf_ovo.predict(X_test)))
+
+    best_c = select_param_linear(
+        X_train, Y_train, C_range=range, loss="squared_hinge", penalty="l1", dual=False)
+    print("Best C for linear: ", best_c)
+
+    clf_ovr = multiclass.OneVsRestClassifier(LinearSVC(C=best_c, penalty="l1", loss="squared_hinge", dual=False, random_state=445)).fit(
+        X_train, Y_train)
+    clf_ovo = multiclass.OneVsOneClassifier(LinearSVC(C=best_c, penalty="l1", loss="squared_hinge", dual=False, random_state=445)).fit(
+        X_train, Y_train)
+    print("l1, squared_hinge:")
+    print("One vs Rest Accuracy: ",
+          metrics.accuracy_score(Y_test, clf_ovr.predict(X_test)))
+    print("One vs One Accuracy: ",
+          metrics.accuracy_score(Y_test, clf_ovo.predict(X_test)))
+
+    comb = []
+    for c in range:
+        for r in range:
+            comb.append([c, r])
+
+    best_c, best_r = select_param_quadratic(X_train, Y_train, param_range=comb)
+    print("Best C, r for quadratic: ", best_c, best_r)
+
+    clf_ovr = multiclass.OneVsOneClassifier(SVC(
+        C=best_c, coef0=best_r, kernel="poly", degree=2, gamma="auto", random_state=445)).fit(X_train, Y_train)
+    clf_ovo = multiclass.OneVsOneClassifier(SVC(
+        C=best_c, coef0=best_r, kernel="poly", degree=2, gamma="auto", random_state=445)).fit(X_train, Y_train)
+
+    print("One vs Rest Accuracy: ",
+          metrics.accuracy_score(Y_test, clf_ovr.predict(X_test)))
+    print("One vs One Accuracy: ",
+          metrics.accuracy_score(Y_test, clf_ovo.predict(X_test)))
+
+    clf_final = multiclass.OneVsRestClassifier(LinearSVC(C=best_c, penalty="l2", loss="hinge", dual=True, random_state=445)).fit(
+        X_train, Y_train)
+
+    real_test = load_data("data/heldout.csv")
+
+    real_test["text"] = [t.lower() for t in real_test["text"]]
+
+    real_test["text"] = [word_tokenize(t) for t in real_test["text"]]
+    tag_map = defaultdict(lambda: wn.NOUN)
+    tag_map['J'] = wn.ADJ
+    tag_map['V'] = wn.VERB
+    tag_map['R'] = wn.ADV
+
+    for index, t in enumerate(real_test["text"]):
+        Final_words = []
+        word_lemmatized = WordNetLemmatizer()
+
+        for word, tag in pos_tag(t):
+            if word not in stopwords.words('english') and word.isalpha():
+                word_final = word_lemmatized.lemmatize(word, tag_map[tag[0]])
+                Final_words.append(word_final)
+        real_test.loc[index, "text_final"] = str(Final_words)
+
+    x1 = model_selection.train_test_split(
+        real_test["text_final"])
+
+    x1 = vectorizer.transform(real_test["text_final"])
+
+    prediction = clf_final.predict(x1)
+
+    prediction = Encoder.inverse_transform(prediction)
+
+    generate_challenge_labels(prediction, "qifwang")
 
     print()
 
